@@ -1,28 +1,79 @@
-def merge(trie1, trie2):
+def merge_trie(trie1, trie2):
+    """
+    Merge two LOUDS-tries efficiently.
+    
+    Args:
+        trie1: First input trie
+        trie2: Second input trie
+        
+    Returns:
+        A new merged LOUDS-trie
+    """
+    # Extract all keys from both tries
+    # This is a simplification - in a production system,
+    # you'd traverse the tries directly to extract keys
+    keys1 = extract_keys(trie1)
+    keys2 = extract_keys(trie2)
+    
+    # Merge and sort keys
+    merged_keys = sorted(set(keys1) | set(keys2))
+    
+    # Create a new trie with the merged keys
     merged_trie = Trie()
+    for key in merged_keys:
+        merged_trie.add(key)
     
-    def merge_levels(level1, level2, merged_level):
-        idx1, idx2 = 0, 0
-        while idx1 < len(level1.labels) or idx2 < len(level2.labels):
-            if idx1 < len(level1.labels) and (idx2 >= len(level2.labels) or level1.labels[idx1] < level2.labels[idx2]):
-                merged_level.add_node(level1.labels[idx1], level1.outs[idx1])
-                idx1 += 1
-            elif idx2 < len(level2.labels) and (idx1 >= len(level1.labels) or level1.labels[idx1] > level2.labels[idx2]):
-                merged_level.add_node(level2.labels[idx2], level2.outs[idx2])
-                idx2 += 1
-            else:  # Same character, merge them
-                merged_level.add_node(level1.labels[idx1], level1.outs[idx1] or level2.outs[idx2])
-                idx1 += 1
-                idx2 += 1
-        merged_level.finalize()
-
-    max_levels = max(len(trie1.levels), len(trie2.levels))
-    
-    for i in range(max_levels):
-        level1 = trie1.levels[i] if i < len(trie1.levels) else LOUDS()
-        level2 = trie2.levels[i] if i < len(trie2.levels) else LOUDS()
-        merged_level = LOUDS()
-        merge_levels(level1, level2, merged_level)
-        merged_trie.levels.append(merged_level)
+    # Build the trie indexes
+    merged_trie.build()
     
     return merged_trie
+
+
+def extract_keys(trie):
+    """
+    Extract all keys from a trie.
+    
+    Args:
+        trie: Input trie
+        
+    Returns:
+        List of keys in the trie
+    """
+    keys = []
+    
+    def dfs(node_id, level, current_key):
+        """Depth-first traversal to extract keys."""
+        # Check if this node is a terminal
+        if level < len(trie.levels) and trie.levels[level].outs.get(node_id):
+            keys.append(current_key)
+        
+        # Skip if reached the maximum level
+        if level + 1 >= len(trie.levels):
+            return
+        
+        # Find children
+        next_level = trie.levels[level + 1]
+        node_pos = 0
+        
+        if node_id != 0:
+            node_pos = next_level.louds.select(node_id - 1) + 1
+            start_child = node_pos - node_id
+        else:
+            start_child = 0
+        
+        # Determine the range of children
+        end_pos = node_pos
+        while end_pos < next_level.louds.n_bits and next_level.louds.get(end_pos) == 0:
+            end_pos += 1
+        
+        end_child = start_child + end_pos - node_pos
+        
+        # Visit each child
+        for child_id in range(start_child, end_child):
+            char = chr(next_level.labels[child_id])
+            dfs(child_id, level + 1, current_key + char)
+    
+    # Start DFS from the root
+    dfs(0, 0, "")
+    
+    return keys
