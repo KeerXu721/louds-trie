@@ -44,17 +44,17 @@ struct BitVector {
     }
   };
 
-  vector<uint64_t> words;
-  vector<Rank> ranks;
-  vector<uint32_t> selects;
-  uint64_t n_bits;
+  vector<uint64_t> words; // word holds actual 64-bit chunks of the bit vector
+  vector<Rank> ranks; // rank metadata for each block
+  vector<uint32_t> selects;  // holds select metadata
+  uint64_t n_bits;  // keeps track of total num of bits in the vector
 
   BitVector() : words(), ranks(), selects(), n_bits(0) {}
 
-  uint64_t get(uint64_t i) const {
+  uint64_t get(uint64_t i) const {  // returns the bit at the index i 
     return (words[i / 64] >> (i % 64)) & 1UL;
   }
-  void set(uint64_t i, uint64_t bit) {
+  void set(uint64_t i, uint64_t bit) {  // set the bit at index i to the specified value bit
     if (bit) {
       words[i / 64] |= (1UL << (i % 64));
     } else {
@@ -62,13 +62,14 @@ struct BitVector {
     }
   }
 
-  void add(uint64_t bit) {
+  void add(uint64_t bit) {  // add a bit to the vector, if necessary, resize the words vector to accommodate the new bit
     if (n_bits % 256 == 0) {
       words.resize((n_bits + 256) / 64);
     }
     set(n_bits, bit);
     ++n_bits;
   }
+
   // build builds indexes for rank and select.
   void build() {
     uint64_t n_blocks = words.size() / 4;
@@ -217,9 +218,9 @@ TrieImpl::TrieImpl()
 }
 
 void TrieImpl::add(const string &key) {
-  assert(key > last_key_);
+  assert(key > last_key_); // the keys must be inserted in lexicographical order 
   if (key.empty()) {
-    levels_[0].outs.set(0, 1);
+    levels_[0].outs.set(0, 1);  // mark as terminal node
     ++levels_[1].offset;
     ++n_keys_;
     return;
@@ -281,16 +282,6 @@ int64_t TrieImpl::lookup(const string &query) const {
     } else {
       node_pos = 0;
     }
-
-    // Linear search implementation
-    // for (uint8_t byte = query[i]; ; ++node_pos, ++node_id) {
-    //   if (level.louds.get(node_pos) || level.labels[node_id] > byte) {
-    //     return -1;
-    //   }
-    //   if (level.labels[node_id] == byte) {
-    //     break;
-    //   }
-    // }
 
     // Binary search implementation
     uint64_t end = node_pos;
