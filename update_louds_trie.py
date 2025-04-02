@@ -354,10 +354,9 @@ def extract_keys(trie):
     
     # Start DFS from the root
     dfs(0, 0, "")
-    
     return keys
 
-# tests
+# tests with sample code
 if __name__ == "__main__":
     # Create and populate the first trie
     trie1 = Trie()
