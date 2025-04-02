@@ -10,12 +10,10 @@ def merge_trie(trie1, trie2):
         A new merged LOUDS-trie
     """
     # Extract all keys from both tries
-    # This is a simplification - in a production system,
-    # you'd traverse the tries directly to extract keys
     keys1 = extract_keys(trie1)
     keys2 = extract_keys(trie2)
     
-    # Merge and sort keys
+    # Merge and sort keys, remove duplicates and keep alphabetical order
     merged_keys = sorted(set(keys1) | set(keys2))
     
     # Create a new trie with the merged keys
@@ -45,7 +43,7 @@ def extract_keys(trie):
         """Depth-first traversal to extract keys."""
         # Check if this node is a terminal
         if level < len(trie.levels) and trie.levels[level].outs.get(node_id):
-            keys.append(current_key)
+            keys.append(current_key)  # add the key to results if reaches the end 
         
         # Skip if reached the maximum level
         if level + 1 >= len(trie.levels):
@@ -75,5 +73,4 @@ def extract_keys(trie):
     
     # Start DFS from the root
     dfs(0, 0, "")
-    
     return keys

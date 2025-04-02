@@ -1,8 +1,6 @@
 class BitVector:
-    """Python implementation of the BitVector class from the C++ code."""
-    
+
     class Rank:
-        """Rank data structure to enable efficient rank/select operations."""
         def __init__(self):
             self.abs_hi = 0
             self.abs_lo = 0
@@ -40,7 +38,6 @@ class BitVector:
         self.n_bits += 1
     
     def build(self):
-        """Builds indexes for rank and select operations."""
         n_blocks = len(self.words) // 4
         n_ones = 0
         self.ranks = [self.Rank() for _ in range(n_blocks + 1)]
@@ -62,7 +59,7 @@ class BitVector:
                     count = n_ones
                     temp_word = word
                     while temp_word != 0:
-                        pos = (temp_word & -temp_word).bit_length() - 1  # ctz equivalent
+                        pos = (temp_word & -temp_word).bit_length() - 1  
                         if count % 256 == 0:
                             self.selects.append(((word_id * 64) + pos) // 256)
                             break
@@ -123,7 +120,6 @@ class BitVector:
             word_id += 3
             i -= self.ranks[rank_id].rels[2]
         
-        # Parallel bit deposit - find ith 1 in word
         word = self.words[word_id]
         count = 0
         pos = 0
@@ -159,7 +155,6 @@ class Level:
 
 
 class Trie:
-    """Python implementation of the LOUDS-Trie."""
     
     def __init__(self):
         self.levels = [Level(), Level()]  # Initialize with two levels
@@ -177,7 +172,7 @@ class Trie:
     
     def add(self, key):
         """Add a key to the trie."""
-        assert key > self.last_key, "Keys must be inserted in lexicographical order"
+        assert key > self.last_key  # Keys must be inserted in lexicographical order
         
         if not key:
             self.levels[0].outs.set(0, 1)  # Mark root as terminal
@@ -221,7 +216,6 @@ class Trie:
         self.last_key = key
     
     def build(self):
-        """Build the trie indexes for fast lookup."""
         offset = 0
         for i in range(len(self.levels)):
             level = self.levels[i]
@@ -232,7 +226,7 @@ class Trie:
             self.size_bytes += level.size()
     
     def lookup(self, query):
-        """Look up a query in the trie."""
+        """Look up a query in the trie. -1 indicating the query does not exists in the trie"""
         if len(query) >= len(self.levels):
             return -1
         
@@ -289,12 +283,10 @@ def merge_trie(trie1, trie2):
         A new merged LOUDS-trie
     """
     # Extract all keys from both tries
-    # This is a simplification - in a production system,
-    # you'd traverse the tries directly to extract keys
     keys1 = extract_keys(trie1)
     keys2 = extract_keys(trie2)
     
-    # Merge and sort keys
+    # Merge and sort keys, remove duplicates and keep alphabetical order
     merged_keys = sorted(set(keys1) | set(keys2))
     
     # Create a new trie with the merged keys
@@ -324,7 +316,7 @@ def extract_keys(trie):
         """Depth-first traversal to extract keys."""
         # Check if this node is a terminal
         if level < len(trie.levels) and trie.levels[level].outs.get(node_id):
-            keys.append(current_key)
+            keys.append(current_key)  # add the key to results if reaches the end 
         
         # Skip if reached the maximum level
         if level + 1 >= len(trie.levels):

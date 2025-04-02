@@ -24,3 +24,11 @@ Instead of writing the `merge_trie` method within the `Trie` class, I chose to i
 3. The **key extraction method** uses a simple **depth-first search (DFS)** algorithm to traverse both tries and return the stored words.
 
 This approach ensures that the merging process remains **efficient** while maintaining the **space-efficient LOUDS format**.
+
+
+## **Deliverables**  
+
+I added two new files to the original repository:  
+
+- **`merge.py`** – Contains the individual `merge_trie(trie1, trie2)` logic.  
+- **`update_louds_trie.py`** – Includes all the classes translated from C++ to Python, the `merge_trie(trie1, trie2)` method, as well as a simple test case to demonstrate that the code works as expected.  
