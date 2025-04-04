@@ -1,3 +1,5 @@
+from collections import defaultdict
+
 class BitVector:
 
     class Rank:
@@ -270,6 +272,28 @@ class Trie:
             
         return level.offset + level.outs.rank(node_id) 
 
+    def find_parent_char(self, child_label_idx, louds, parent_labels):
+        """
+        Given an index into the child level's labels list,
+        find the character of the parent node from the parent level's label list.
+        """
+        # Step 1: Find the position of the child_label_idx-th 0 in the LOUDS bitvector
+        pos = 0
+        zero_count = 0
+
+        while zero_count <= child_label_idx:
+            if louds.get(pos) == 0:
+                zero_count += 1
+            pos += 1
+        pos -= 1  # Go back to the position of the 0 bit
+
+        # Step 2: Count the number of 1s before this 0
+        parent_id = louds.rank(pos)
+
+        # Step 3: Return the corresponding parent label
+        return parent_labels[parent_id] if parent_id < len(parent_labels) else None
+
+
     def merge_trie(self, other_trie):
         # TODO finish the code here 
 
@@ -296,13 +320,53 @@ class Trie:
             self.levels[0].outs.set(0, 1)
             merged_key_count += 1
         
-        # Store the previous level's parent-to-children mapping
-        # Start with the root (level 0) as a single parent
-        prev_level_mapping = {0: 0}  # Map node index to its position in the merged tree
-        
-        pass
-           
- 
+        level_maps = defaultdict(dict)
+
+        for i in range(1, max(len(self.levels), len(other_trie.levels))):
+            self_level = self.levels[i]
+            other_level = other_trie.levels[i]
+            self_labels = self_level.labels
+            other_labels = other_level.labels
+
+            parent_label = defaultdict(set)
+            for s_l in range(len(self_labels)):
+                idx_1 = self.find_parent_char(s_l, self_level.louds, self.levels[i-1].labels)
+                parent_label[idx_1].add(self_labels[s_l])
+
+            for o_l in range(len(other_labels)):
+                idx_1 = self.find_parent_char(o_l, other_level.louds, other_trie.levels[i-1].labels)
+                parent_label[idx_1].add(other_labels[o_l])
+
+            level_maps[i] = parent_label
+
+        for level in level_maps.keys():
+            parent_label = level_maps[level]
+            new_labels = []
+            if len(parent_label) == 1 and list(parent_label.keys())[0] == ' ':
+                # Parent is the root, add the current level characters alphabetically
+                labels = sorted(parent_label[' '])
+                for label_idx in range(len(labels)):
+                    new_labels.append(labels[label_idx])
+                    self.levels[i].louds.set(label_idx, 0)  # Set 1 for each child
+                self.levels[i].louds.set(len(labels), 1)  # End of the level
+                self.levels[i].labels = new_labels
+
+            else:
+                # Sort by the parent node, and sort the corresponding children's nodes
+                parent_sorted = dict(sorted(parent_label.items()))
+                cur_idx = 0  # Track index across all children
+                for k, v in parent_sorted.items():
+                    sorted_labels = sorted(v)
+                    cur_idx = 0
+                    for label_idx in range(len(sorted_labels)):
+                        new_labels.append(sorted_labels[label_idx])
+                        self.levels[i].louds.set(cur_idx, 0)  
+                        cur_idx += 1
+                    self.levels[i].louds.set(cur_idx, 1)  # End of children for parent
+
+                self.levels[i].labels = new_labels 
+
+
 def merge_trie(trie1, trie2):
     """
     Merge two LOUDS-tries efficiently.
@@ -383,13 +447,13 @@ def extract_keys(trie):
 if __name__ == "__main__":
     # Create and populate the first trie
     trie1 = Trie()
-    for word in ["apple", "banana", "cherry"]:
+    for word in ["add", "apl", "app", "bce"]:
         trie1.add(word)
     trie1.build()
     trie1.lookup("apple")
     # Create and populate the second trie
     trie2 = Trie()
-    for word in ["banana", "cherry", "date", "fig"]:
+    for word in ["adf" ,"ama", "amb", "cde"]:
         trie2.add(word)
     trie2.build()
     
