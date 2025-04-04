@@ -24,7 +24,7 @@ class BitVector:
         return (self.words[i // 64] >> (i % 64)) & 1
     
     def set(self, i, bit):
-        """Sets the bit at index i to the specified value."""
+        """Sets the bit at index i to the input bit value."""
         if bit:
             self.words[i // 64] |= (1 << (i % 64))
         else:
@@ -146,7 +146,7 @@ class Level:
     def __init__(self):
         self.louds = BitVector()  # LOUDS bitvector
         self.outs = BitVector()   # Output bitvector marking terminals
-        self.labels = []          # Edge labels
+        self.labels = []          # Edge labels stored in ord number 
         self.offset = 0           # Offset for this level
     
     def size(self):
@@ -171,7 +171,7 @@ class Trie:
         self.levels[0].labels.append(' ')  # Root label
     
     def add(self, key):
-        """Add a key to the trie."""
+        """Add a word to the trie."""
         assert key > self.last_key  # Keys must be inserted in lexicographical order
         
         if not key:
@@ -230,7 +230,7 @@ class Trie:
         if len(query) >= len(self.levels):
             return -1
         
-        node_id = 0
+        node_id = 0  #ith node in this level
         for i in range(len(query)):
             level = self.levels[i + 1]
             node_pos = 0
@@ -268,9 +268,41 @@ class Trie:
         if not level.outs.get(node_id):
             return -1
             
-        return level.offset + level.outs.rank(node_id)
+        return level.offset + level.outs.rank(node_id) 
 
+    def merge_trie(self, other_trie):
+        # TODO finish the code here 
 
+        """
+        Merge another LOUDS trie into this trie by directly manipulating the BitVectors.
+        Basic Logic:
+        for each level on both tries:
+            extract labels from both tries
+            create a parent-label mapping (to make sure the trie structure is kept correctly)
+
+            first sort the parent nodes in alphabetical order
+            update the corresponding nodes' louds and outs BitVector in alphabetical order 
+                
+        """
+        if not other_trie or other_trie.n_keys == 0:
+            return  # Nothing to merge
+        
+        # Keep track of merged keys count
+        merged_key_count = 0
+        
+        # Process the root level separately (level 0)
+        # Merge terminal status of root nodes
+        if not self.levels[0].outs.get(0) and other_trie.levels[0].outs.get(0):
+            self.levels[0].outs.set(0, 1)
+            merged_key_count += 1
+        
+        # Store the previous level's parent-to-children mapping
+        # Start with the root (level 0) as a single parent
+        prev_level_mapping = {0: 0}  # Map node index to its position in the merged tree
+        
+        pass
+           
+ 
 def merge_trie(trie1, trie2):
     """
     Merge two LOUDS-tries efficiently.
@@ -298,7 +330,6 @@ def merge_trie(trie1, trie2):
     merged_trie.build()
     
     return merged_trie
-
 
 def extract_keys(trie):
     """
@@ -355,7 +386,7 @@ if __name__ == "__main__":
     for word in ["apple", "banana", "cherry"]:
         trie1.add(word)
     trie1.build()
-    
+    trie1.lookup("apple")
     # Create and populate the second trie
     trie2 = Trie()
     for word in ["banana", "cherry", "date", "fig"]:
@@ -363,10 +394,13 @@ if __name__ == "__main__":
     trie2.build()
     
     # Merge the tries
-    merged_trie = merge_trie(trie1, trie2)
+    trie1.merge_trie(trie2)
+    trie1.build()
+
+    # merge_tries_in_place(trie1, trie2)
     
     # Verify the merged trie
-    test_words = ["apple", "banana", "cherry", "date", "fig", "grape"]
+    test_words = ["a"]
     for word in test_words:
-        result = merged_trie.lookup(word)
+        result = trie1.lookup(word)
         print(f"Word '{word}': {'Found' if result >= 0 else 'Not found'}")
